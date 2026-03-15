@@ -1,4 +1,8 @@
-node_modules/
-.env
+*/node_modules/
+*/.env
 backend/service-account.json
+backend/localhost.pem
+backend/localhost-key.pem
 dist/
+prompts/
+.claude/settings.local.json

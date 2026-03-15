@@ -32,9 +32,10 @@ export async function inviteMember(
     throw new NotFoundError(`User with email ${email} not found`)
   }
 
-  // Add to members
+  // Add to members and memberIds
   await db.collection("trees").doc(treeId).update({
     [`members.${targetUid}`]: role,
+    memberIds: admin.firestore.FieldValue.arrayUnion(targetUid),
   })
 }
 
@@ -94,8 +95,9 @@ export async function removeMember(
     throw new NotFoundError(`User ${targetUid} is not a member of tree ${treeId}`)
   }
 
-  // Remove member
+  // Remove member and from memberIds
   await db.collection("trees").doc(treeId).update({
     [`members.${targetUid}`]: admin.firestore.FieldValue.delete(),
+    memberIds: admin.firestore.FieldValue.arrayRemove(targetUid),
   })
 }

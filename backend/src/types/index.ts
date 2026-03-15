@@ -26,6 +26,8 @@ export type Tree = {
   name: string
   ownerId: string
   members: Record<string, MemberRole>
+  memberIds: string[]  // denormalized array of user IDs for efficient Firestore queries
+  rootId: string | null  // id of the root person node
   version: number  // optimistic locking
   nodes: Record<string, PersonNode>
   edges: Record<string, RelationEdge>

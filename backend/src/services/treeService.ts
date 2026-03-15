@@ -19,6 +19,8 @@ export async function createTree(ownerId: string, name: string): Promise<Tree> {
     name,
     ownerId,
     members: { [ownerId]: "owner" },
+    memberIds: [ownerId],
+    rootId: null,
     version: 1,
     nodes: {},
     edges: {},
@@ -31,13 +33,30 @@ export async function createTree(ownerId: string, name: string): Promise<Tree> {
 }
 
 export async function listTrees(userId: string): Promise<Tree[]> {
-  // Get all trees (we filter by user membership in memory since Firestore
-  // doesn't support dynamic field names in where clauses)
-  const snapshot = await db.collection("trees").get()
+  // Query 1: Trees where user is owner
+  const ownerSnapshot = await db
+    .collection("trees")
+    .where("ownerId", "==", userId)
+    .get()
 
-  return snapshot.docs
-    .map((doc: any) => doc.data() as Tree)
-    .filter((tree) => tree.members[userId])
+  // Query 2: Trees where user is a member (in the memberIds array)
+  const memberSnapshot = await db
+    .collection("trees")
+    .where("memberIds", "array-contains", userId)
+    .get()
+
+  // Deduplicate by id and return
+  const treeMap = new Map<string, Tree>()
+
+  ownerSnapshot.docs.forEach((doc) => {
+    treeMap.set(doc.id, doc.data() as Tree)
+  })
+
+  memberSnapshot.docs.forEach((doc) => {
+    treeMap.set(doc.id, doc.data() as Tree)
+  })
+
+  return Array.from(treeMap.values())
 }
 
 export async function getTree(treeId: string, userId: string): Promise<Tree> {
@@ -114,6 +133,11 @@ export async function deleteTree(treeId: string, userId: string): Promise<void> 
  */
 export function validateTree(tree: Tree): void {
   const errors: string[] = []
+
+  // Check rootId references existing node
+  if (tree.rootId && !tree.nodes[tree.rootId]) {
+    errors.push(`rootId "${tree.rootId}" references non-existent node`)
+  }
 
   // Check symmetric PARTNER_OF edges
   for (const edgeId in tree.edges) {

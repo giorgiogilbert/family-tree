@@ -3,18 +3,19 @@
 let currentGetTree = null
 let currentSaveTree = null
 let currentUserRole = null
+let currentOnActiveRootChange = null
 
 /**
  * Bind all user interactions on the rendered SVG:
- * - Click on node → open sidebar with details and actions
- * - Click on node → edit form
+ * - Click on node → change active root + open sidebar
  * - Click on add-child-btn → add child to couple
  * - All mutations go through the onTreeChange callback
  */
-export function bindInteractions(getTree, saveTree, userRole) {
+export function bindInteractions(getTree, saveTree, userRole, onActiveRootChange) {
   currentGetTree = getTree
   currentSaveTree = saveTree
   currentUserRole = userRole
+  currentOnActiveRootChange = onActiveRootChange
 
   const svg = document.getElementById('graph-svg')
 
@@ -27,6 +28,7 @@ export function bindInteractions(getTree, saveTree, userRole) {
         const tree = currentGetTree()
         const node = tree.nodes[nodeId]
         if (node) {
+          if (currentOnActiveRootChange) currentOnActiveRootChange(nodeId)
           openNodeSidebar(node, tree)
         }
         return
@@ -65,6 +67,7 @@ function openNodeSidebar(node, tree) {
   const canAddParents = parents < 2
 
   let html = `
+    <button id="btn-close-sidebar" class="sidebar-close">&times;</button>
     <h3>${node.name} ${node.surname}</h3>
     <p class="sidebar-dates">${node.birth || '?'} – ${node.death || '?'}</p>
     <p class="sidebar-gender">${node.gender}</p>
@@ -115,9 +118,9 @@ function openNodeSidebar(node, tree) {
 
     if (addParentsBtn) {
       addParentsBtn.addEventListener('click', async () => {
-        const fatherData = await openPersonForm()
+        const fatherData = await openPersonForm(null, '1/2 – Aggiungi genitore 1')
         if (!fatherData) return
-        const motherData = await openPersonForm()
+        const motherData = await openPersonForm(null, '2/2 – Aggiungi genitore 2')
         if (!motherData) return
 
         const updatedTree = addParents(currentGetTree(), node.id, fatherData, motherData)
@@ -138,6 +141,21 @@ function openNodeSidebar(node, tree) {
   }
 
   sidebar.style.display = 'block'
+
+  // Close button
+  document.getElementById('btn-close-sidebar').addEventListener('click', () => {
+    sidebar.style.display = 'none'
+  })
+
+  // Click-outside to close
+  function onClickOutside(e) {
+    if (!sidebar.contains(e.target) && !e.target.closest('.node')) {
+      sidebar.style.display = 'none'
+      document.removeEventListener('mousedown', onClickOutside)
+    }
+  }
+  // Defer so the current click doesn't immediately close it
+  setTimeout(() => document.addEventListener('mousedown', onClickOutside), 0)
 }
 
 /**
@@ -157,14 +175,14 @@ function countParents(tree, nodeId) {
  * Show the person modal pre-filled with data (or empty for new).
  * Returns a Promise that resolves to PersonNode data on confirm, null on cancel.
  */
-export function openPersonForm(existing = null) {
+export function openPersonForm(existing = null, title = null) {
   return new Promise((resolve) => {
     const overlay = document.getElementById('modal-overlay')
     const form = document.getElementById('person-form')
     const titleEl = document.getElementById('modal-title')
 
     if (existing) {
-      titleEl.textContent = 'Modifica persona'
+      titleEl.textContent = title || 'Modifica persona'
       form.elements.name.value = existing.name
       form.elements.surname.value = existing.surname
       form.elements.birth.value = existing.birth || ''
@@ -172,7 +190,7 @@ export function openPersonForm(existing = null) {
       form.elements.gender.value = existing.gender
       form.elements.notes.value = existing.notes || ''
     } else {
-      titleEl.textContent = 'Nuova persona'
+      titleEl.textContent = title || 'Nuova persona'
       form.reset()
     }
 

@@ -21,35 +21,54 @@ async function route() {
   const user = getCurrentUser()
   const hash = window.location.hash || "#/"
 
+  console.log("[ROUTE] Routing - user:", user?.email, "hash:", hash)
+
+  // If no user, always show login and redirect to #/
   if (!user) {
+    console.log("[ROUTE] No user, showing login")
     showPage("page-login")
+    if (hash !== "#/") {
+      window.location.hash = "#/"
+    }
     return
   }
 
+  // If user is authenticated but on login page, redirect to dashboard
   if (hash === "#/" || hash === "#/dashboard") {
-    await renderDashboard()
-    showPage("page-dashboard")
+    console.log("[ROUTE] Loading dashboard...")
+    try {
+      await renderDashboard()
+      showPage("page-dashboard")
+      console.log("[ROUTE] Dashboard loaded")
+    } catch (err) {
+      console.error("[ROUTE] Dashboard error:", err)
+    }
   } else if (hash.startsWith("#/tree/")) {
     const treeId = hash.slice("#/tree/".length)
-    await renderEditor(treeId)
-    showPage("page-editor")
+    console.log("[ROUTE] Loading editor for tree:", treeId)
+    try {
+      showPage("page-editor")
+      await renderEditor(treeId)
+    } catch (err) {
+      console.error("[ROUTE] Editor error:", err)
+    }
   } else {
-    window.location.hash = "#/"
+    // Unknown route, redirect to dashboard if authenticated
+    window.location.hash = "#/dashboard"
   }
 }
 
 // Initial route and setup
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("[INIT] DOMContentLoaded fired")
   initLoginButton()
   initDashboard()
 
-  // Subscribe to auth changes after app is ready
+  // Subscribe to auth changes — this is the single point of routing decisions
   onAuthChanged((user) => {
+    console.log("[AUTH-LISTENER] Auth state changed - user:", user?.email || "null")
     route()
   })
-
-  // Initial route
-  route()
 })
 
 window.addEventListener("hashchange", route)

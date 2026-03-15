@@ -222,6 +222,11 @@ label {
   fill: #f3f4f6;
 }
 
+.node--root rect {
+  stroke: var(--color-primary);
+  stroke-width: 3;
+}
+
 .node.highlighted rect {
   filter: drop-shadow(0 0 4px var(--color-primary));
 }
@@ -267,6 +272,13 @@ label {
 .edge--adopted {
   stroke-width: 1.5;
   stroke-dasharray: 6, 3;
+}
+
+.edge--hidden-stub {
+  stroke: var(--color-text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 4, 4;
+  stroke-linecap: round;
 }
 
 /* Add child button */
@@ -329,9 +341,26 @@ label {
   display: none;
 }
 
+.sidebar-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  line-height: 1;
+  padding: 2px 6px;
+}
+.sidebar-close:hover {
+  color: var(--color-text);
+}
+
 #sidebar h3 {
   margin-bottom: 8px;
   font-size: 18px;
+  padding-right: 24px;
 }
 
 #sidebar p {
@@ -373,6 +402,20 @@ label {
 /* ============================================================
    Status Label
    ============================================================ */
+#editor-active-root {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+#btn-back-root {
+  font-size: 12px;
+  padding: 4px 10px;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-bg);
+}
+
 #save-status {
   font-size: 12px;
   color: var(--color-text-muted);

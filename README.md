@@ -10,12 +10,12 @@ Grafo SVG navigabile con zoom e pan, autenticazione Google, condivisione con ruo
 
 | Layer | Tecnologia |
 |---|---|
-| Frontend | Vanilla JS + SVG |
+| Frontend | Vanilla JS + ES Modules + SVG |
 | Backend | Node.js + TypeScript + Express |
 | Database | Firestore (documento unico per albero) |
 | Auth | Firebase Auth (Google OAuth) |
-| Deploy backend | Fly.io |
-| Deploy frontend | Firebase Hosting |
+| Server | Monolith (backend serve frontend + API) |
+| Deploy | Fly.io |
 
 ---
 
@@ -102,28 +102,20 @@ PORT=3000
 ```
 
 ### Frontend
-Niente da configurare oltre a `firebase-config.js` — niente bundler, niente `.env`.
+Niente da configurare. Il backend serve i file frontend statici e l'importmap per Firebase SDK.
 
 ---
 
 ## Avvio in sviluppo
 
-**Backend** (terminale 1):
+**Monolith** — backend serve il frontend:
 ```bash
 cd backend
 npm install
 npm run dev
 ```
 
-Il backend gira su `http://localhost:3000`.
-
-**Frontend** (terminale 2):
-```bash
-cd frontend
-npx serve . -p 5000
-```
-
-Il frontend è su `http://localhost:5000`.
+Apri `http://localhost:3000` nel browser. Il backend serve sia l'API che l'interfaccia frontend.
 
 ---
 
@@ -229,7 +221,9 @@ GET    /trees/:treeId/export      scarica JSON puro (nodes + edges)
 
 ## Deploy
 
-### Backend su Fly.io
+Il backend ora serve sia l'API che il frontend come monolith — un unico deploy su Fly.io.
+
+### Backend + Frontend su Fly.io
 
 ```bash
 # Installa flyctl
@@ -246,18 +240,7 @@ fly secrets set GOOGLE_APPLICATION_CREDENTIALS_JSON="$(cat service-account.json)
 fly deploy
 ```
 
-Aggiorna la variabile `BASE_URL` in `frontend/src/api.js` con l'URL assegnato da Fly.io.
-
-### Frontend su Firebase Hosting
-
-```bash
-cd frontend
-firebase login
-firebase init hosting      # public directory: "." , single-page app: no
-firebase deploy
-```
-
-Aggiungi il dominio Firebase Hosting alla lista degli **Authorized domains** in **Firebase Auth → Settings → Authorized domains**.
+Fly.io avvierà il backend che serve sia l'API che i file frontend statici. Aggiorna i **Authorized domains** in **Firebase Auth → Settings → Authorized domains** con il dominio assegnato da Fly.io.
 
 ---
 

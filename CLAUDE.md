@@ -4,11 +4,12 @@
 Web app per creare e navigare alberi genealogici. Frontend Vanilla JS con grafo SVG interattivo, backend Node.js TypeScript, persistenza su Firestore.
 
 ## Stack
-- **Frontend**: Vanilla JS, SVG per il grafo, Firebase Auth SDK (no framework)
+- **Frontend**: Vanilla JS, ES Modules + importmap, SVG per il grafo, Firebase SDK (no framework)
 - **Backend**: Node.js, TypeScript, Express, Firebase Admin SDK
+- **Server**: Monolith — backend serve frontend statico + API
 - **Database**: Firestore (documento unico per albero)
 - **Auth**: Google OAuth via Firebase
-- **Deploy**: Fly.io (backend), Firebase Hosting (frontend)
+- **Deploy**: Fly.io (backend + frontend monolith)
 
 ---
 
@@ -86,6 +87,7 @@ type Tree = {
   name: string
   ownerId: string
   members: Record<string, "owner" | "editor" | "viewer">
+  rootId: string | null                // id del nodo radice dell'albero
   version: number                      // ottimistic locking
   nodes: Record<string, PersonNode>
   edges: Record<string, RelationEdge>
@@ -257,6 +259,30 @@ Senza framework — routing minimale basato su `window.location.hash`:
 
 ---
 
+## Frontend — ES Modules e importmap
+
+Il frontend usa ES Modules (import/export) con un importmap che mappa i moduli Firebase SDK dalle CDN:
+
+```html
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+      "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+    }
+  }
+</script>
+```
+
+Tutti i moduli frontend (auth.js, dashboard.js, editor.js, etc.) usano import/export standard ES6.
+Il backend serve index.html con una Content Security Policy che consente:
+- Inline script per importmap (`'unsafe-inline'`)
+- CDN Firebase gstatic.com
+- Connessioni a Firebase (*.firebaseio.com, *.googleapis.com)
+
+---
+
 ## Firebase config (placeholder)
 
 Il file `frontend/src/firebase-config.js` contiene la config Firebase.
@@ -283,24 +309,25 @@ GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
 
 ## Comandi di sviluppo
 
+**Monolith** — backend serve il frontend:
+
 ```bash
-# Backend
 cd backend
 npm install
 npm run dev          # ts-node-dev con hot reload
-
-# Frontend
-cd frontend
-npx serve .          # server statico locale, niente build step
 ```
+
+Il server gira su `http://localhost:3000` e serve sia l'API che i file frontend statici.
+Non è necessario avviare un server separato per il frontend.
 
 ---
 
 ## Note per gli agenti
 
 - Leggere sempre questo file prima di scrivere qualsiasi codice
-- Non inventare tipi o strutture dati non definiti qui — chiedere se ambiguo
+- **Monolith**: il backend serve il frontend statico + API su una singola porta (3000)
 - Il frontend non usa nessun framework JS (no React, no Vue)
+- Frontend: ES Modules con importmap, niente bundler
 - Non usare localStorage per dati sensibili (token gestiti da Firebase SDK)
 - Validare sempre gli invarianti del modello lato backend prima di salvare
 - Non salvare archi ridondanti (no SIBLING_OF, no archi inversi per CHILD_OF)

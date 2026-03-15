@@ -1,21 +1,33 @@
 // auth.js — Google OAuth via Firebase Auth SDK
 
-import { initializeApp } from "firebase/app"
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "firebase/auth"
-import { firebaseConfig } from "./firebase-config.js"
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signOut,
+} from "firebase/auth";
+import { firebaseConfig } from "./firebase-config.js";
 
-const app = initializeApp(firebaseConfig)
-const auth = getAuth(app)
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 /**
  * Sign in with Google popup.
- * Navigates to #/dashboard on success.
+ * Popup handles authentication; onAuthStateChanged triggers routing.
  */
 export async function signInWithGoogle() {
-  const provider = new GoogleAuthProvider()
-  const result = await signInWithPopup(auth, provider)
-  window.location.hash = "#/dashboard"
-  return result.user
+  try {
+    console.log("[AUTH] Starting Google sign-in popup...");
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+    console.log("[AUTH] Google sign-in popup completed");
+    // onAuthStateChanged will trigger and handle routing
+  } catch (err) {
+    console.error("[AUTH] Google sign-in error:", err.code, err.message);
+    throw err;
+  }
 }
 
 /**
@@ -23,8 +35,8 @@ export async function signInWithGoogle() {
  * Navigates to #/login.
  */
 export async function logout() {
-  await signOut(auth)
-  window.location.hash = "#/"
+  await signOut(auth);
+  window.location.hash = "#/";
 }
 
 /**
@@ -33,16 +45,16 @@ export async function logout() {
  * forceRefresh ensures we get a fresh token if expired.
  */
 export async function getIdToken() {
-  const user = auth.currentUser
-  if (!user) return null
-  return await user.getIdToken(true)
+  const user = auth.currentUser;
+  if (!user) return null;
+  return await user.getIdToken(true);
 }
 
 /**
  * Get current user or null.
  */
 export function getCurrentUser() {
-  return auth.currentUser
+  return auth.currentUser;
 }
 
 /**
@@ -50,5 +62,5 @@ export function getCurrentUser() {
  * Calls callback(user) where user is null when signed out.
  */
 export function onAuthChanged(callback) {
-  return onAuthStateChanged(auth, callback)
+  return onAuthStateChanged(auth, callback);
 }

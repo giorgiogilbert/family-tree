@@ -31,6 +31,8 @@
     <header>
       <button id="btn-back-dashboard">← Dashboard</button>
       <span id="editor-tree-name"></span>
+      <span id="editor-active-root"></span>
+      <button id="btn-back-root" class="hidden">Torna a …</button>
       <button id="btn-export">Esporta JSON</button>
     </header>
     <main id="editor-main">
@@ -63,7 +65,7 @@
     </div>
   </div>
 
-  <!-- Firebase SDK -->
+  <!-- Module import map for Firebase SDK -->
   <script type="importmap">
     {
       "imports": {
@@ -73,6 +75,8 @@
       }
     }
   </script>
-  <script type="module" src="src/main.js"></script>
+
+  <!-- App initialization -->
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
