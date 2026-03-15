@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Genealogy Tree</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Login page -->
+  <div id="page-login" class="page hidden">
+    <h1>Genealogy Tree</h1>
+    <button id="btn-google-login">Accedi con Google</button>
+  </div>
+
+  <!-- Dashboard: list of trees -->
+  <div id="page-dashboard" class="page hidden">
+    <header>
+      <h1>I miei alberi</h1>
+      <button id="btn-new-tree">Nuovo albero</button>
+      <button id="btn-logout">Esci</button>
+    </header>
+    <main id="dashboard-list">
+      <!-- tree cards injected by dashboard.js -->
+    </main>
+  </div>
+
+  <!-- Tree editor -->
+  <div id="page-editor" class="page hidden">
+    <header>
+      <button id="btn-back-dashboard">← Dashboard</button>
+      <span id="editor-tree-name"></span>
+      <button id="btn-export">Esporta JSON</button>
+    </header>
+    <main id="editor-main">
+      <!-- SVG graph injected by renderer.js -->
+    </main>
+  </div>
+
+  <!-- Reusable modal for add/edit person form -->
+  <div id="modal-overlay" class="hidden">
+    <div id="modal">
+      <h2 id="modal-title">Persona</h2>
+      <form id="person-form">
+        <label>Nome <input type="text" name="name" required /></label>
+        <label>Cognome <input type="text" name="surname" required /></label>
+        <label>Data di nascita <input type="date" name="birth" /></label>
+        <label>Data di morte <input type="date" name="death" /></label>
+        <label>Genere
+          <select name="gender">
+            <option value="M">M</option>
+            <option value="F">F</option>
+            <option value="other">Altro</option>
+          </select>
+        </label>
+        <label>Note <textarea name="notes"></textarea></label>
+        <div class="form-actions">
+          <button type="button" id="modal-cancel">Annulla</button>
+          <button type="submit" id="modal-confirm">Salva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+      }
+    }
+  </script>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
