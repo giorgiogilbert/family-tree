@@ -1,6 +1,7 @@
 // editor.js — coordinator for the tree editor page
 
 import * as api from "./api.js"
+import * as auth from "./auth.js"
 import { initRenderer, renderGraph, highlightNode, clearHighlight } from "./graph/renderer.js"
 import { computeLayout } from "./graph/layout.js"
 import { bindInteractions, addRoot, openPersonForm } from "./graph/interaction.js"
@@ -11,16 +12,29 @@ let currentUserRole = null
 /**
  * Load the tree by id and initialize the SVG editor
  */
-export async function renderEditor(treeId, userRole = 'owner') {
+export async function renderEditor(treeId) {
   try {
     updateStatusLabel('Caricamento...')
-    currentUserRole = userRole
 
     // Fetch tree from API
     currentTree = await api.getTree(treeId)
 
+    // Get user role from tree members
+    const user = auth.getCurrentUser()
+    currentUserRole = currentTree.members?.[user.uid] || 'viewer'
+
     // Update page header
     document.getElementById('editor-tree-name').textContent = currentTree.name
+
+    // Set up back button
+    document.getElementById('btn-back-dashboard')?.addEventListener('click', () => {
+      window.location.hash = '#/'
+    })
+
+    // Set up export button
+    document.getElementById('btn-export')?.addEventListener('click', () => {
+      exportTree(currentTree.id, currentTree.name)
+    })
 
     // Initialize SVG renderer
     const editorMain = document.getElementById('editor-main')
@@ -117,7 +131,8 @@ async function onTreeChange(updatedTree) {
   try {
     updateStatusLabel('Salvataggio...')
     await api.saveTree(currentTree.id, currentTree)
-    currentTree = { ...updatedTree, version: (updatedTree.version || 0) + 1 }
+    // Increment version locally after successful save
+    currentTree = { ...currentTree, version: currentTree.version + 1 }
     updateStatusLabel('Salvato')
   } catch (error) {
     if (error.code === 'CONFLICT') {
@@ -146,4 +161,23 @@ function updateStatusLabel(text) {
     }
   }
   statusEl.textContent = text
+}
+
+/**
+ * Export tree as JSON
+ */
+async function exportTree(treeId, treeName) {
+  try {
+    const data = await api.exportTree(treeId)
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${treeName}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Error exporting tree:', error)
+    alert('Errore nell\'esportazione: ' + error.message)
+  }
 }

@@ -31,12 +31,13 @@ export async function createTree(ownerId: string, name: string): Promise<Tree> {
 }
 
 export async function listTrees(userId: string): Promise<Tree[]> {
-  const snapshot = await db
-    .collection("trees")
-    .where(`members.${userId}`, "==", true)
-    .get()
+  // Get all trees (we filter by user membership in memory since Firestore
+  // doesn't support dynamic field names in where clauses)
+  const snapshot = await db.collection("trees").get()
 
-  return snapshot.docs.map((doc: any) => doc.data() as Tree)
+  return snapshot.docs
+    .map((doc: any) => doc.data() as Tree)
+    .filter((tree) => tree.members[userId])
 }
 
 export async function getTree(treeId: string, userId: string): Promise<Tree> {

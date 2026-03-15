@@ -30,11 +30,12 @@ export async function logout() {
 /**
  * Get the current Firebase ID token for API requests.
  * Returns null if not authenticated.
+ * forceRefresh ensures we get a fresh token if expired.
  */
 export async function getIdToken() {
   const user = auth.currentUser
   if (!user) return null
-  return await user.getIdToken()
+  return await user.getIdToken(true)
 }
 
 /**

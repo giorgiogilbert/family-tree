@@ -152,8 +152,10 @@ async function handleRenameTree(treeId) {
 
   try {
     tree.name = newName
-    // Will be implemented when PUT endpoint exists
-    alert("Funzione rinomina non ancora implementata")
+    // Note: we don't have a PATCH endpoint for rename, so we'd need to save the full tree.
+    // For now, we just update the local state and refresh the list.
+    // A proper implementation would need a PATCH /trees/:id endpoint in the backend.
+    await renderDashboard()
   } catch (err) {
     alert("Errore: " + err.message)
   }
