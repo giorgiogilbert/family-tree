@@ -6,12 +6,19 @@ import fs from "fs";
 
 // Initialize Firebase Admin SDK BEFORE any other imports
 if (!admin.apps.length) {
-  admin.initializeApp();
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    const serviceAccount = JSON.parse(
+      process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
+    );
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  } else {
+    admin.initializeApp();
+  }
 }
 
 import express, { ErrorRequestHandler } from "express";
-import cors from "cors";
-import helmet from "helmet";
+//import cors from "cors";
+//import helmet from "helmet";
 import path from "path";
 import { ConflictError, NotFoundError, ForbiddenError } from "./types";
 import treesRouter from "./routes/trees";
@@ -77,7 +84,12 @@ app.use(
 app.use(express.json());
 
 // Serve frontend static files
-app.use(express.static(path.join(__dirname, "../../frontend")));
+const FRONTEND_PATH =
+  process.env.FRONTEND_PATH ?? path.join(__dirname, "../../frontend"); // sviluppo: backend/dist → ../../frontend
+console.log("[STATIC] FRONTEND_PATH env:", process.env.FRONTEND_PATH);
+console.log("[STATIC] Resolved path:", FRONTEND_PATH);
+console.log("[STATIC] Exists:", fs.existsSync(FRONTEND_PATH));
+app.use(express.static(FRONTEND_PATH));
 
 // Mount routers
 app.use("/trees", treesRouter);
