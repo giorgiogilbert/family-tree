@@ -147,15 +147,19 @@ function openNodeSidebar(node, tree) {
     sidebar.style.display = 'none'
   })
 
-  // Click-outside to close
+  // Click-outside to close (mouse and touch)
   function onClickOutside(e) {
     if (!sidebar.contains(e.target) && !e.target.closest('.node')) {
       sidebar.style.display = 'none'
       document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('touchstart', onClickOutside)
     }
   }
-  // Defer so the current click doesn't immediately close it
-  setTimeout(() => document.addEventListener('mousedown', onClickOutside), 0)
+  // Defer so the current event doesn't immediately close it
+  setTimeout(() => {
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('touchstart', onClickOutside)
+  }, 0)
 }
 
 /**

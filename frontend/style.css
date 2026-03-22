@@ -193,6 +193,9 @@ label {
   height: 100%;
   cursor: grab;
   background: var(--color-bg);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 #graph-svg.panning {
@@ -421,4 +424,108 @@ label {
   color: var(--color-text-muted);
   margin-left: auto;
   padding: 0 8px;
+}
+
+/* ============================================================
+   Responsive — Mobile
+   ============================================================ */
+
+/* Prevent pull-to-refresh and overscroll on editor */
+#page-editor {
+  overscroll-behavior: none;
+}
+
+@media (max-width: 640px) {
+  /* Header: allow wrapping and shrink text */
+  header {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  #editor-tree-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Hide export button on mobile (not critical for touch use) */
+  #btn-export {
+    display: none;
+  }
+
+  /* Bigger touch targets for all buttons */
+  button {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+
+  .sidebar-close {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  /* Sidebar becomes a bottom sheet */
+  #sidebar {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    max-height: 65vh;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    padding-top: 20px;
+  }
+
+  /* Drag-handle indicator at top of bottom sheet */
+  #sidebar::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--color-border);
+    border-radius: 2px;
+    margin: 0 auto 12px;
+  }
+
+  /* Sidebar actions: 2-column grid */
+  .sidebar-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .sidebar-actions button {
+    font-size: 13px;
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+
+  /* Danger button full-width */
+  .sidebar-actions button.danger {
+    grid-column: 1 / -1;
+  }
+
+  /* Modal: scrollable on small screens */
+  #modal {
+    padding: 20px 16px;
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+
+  /* Dashboard: single column on very small screens */
+  #dashboard-list {
+    grid-template-columns: 1fr;
+  }
 }

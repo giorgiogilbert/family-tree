@@ -70,9 +70,10 @@ function destroyRenderer() {
 }
 
 /**
- * Initialize zoom and pan listeners
+ * Initialize zoom and pan listeners (mouse + touch)
  */
 function initZoomPan() {
+  // ── Mouse: wheel zoom ─────────────────────────────────────
   svgElement.addEventListener('wheel', (e) => {
     e.preventDefault()
     const oldScale = state.transform.scale
@@ -90,6 +91,7 @@ function initZoomPan() {
     applyTransform()
   })
 
+  // ── Mouse: pan ────────────────────────────────────────────
   svgElement.addEventListener('mousedown', (e) => {
     if (e.target === svgElement) {
       state.isPanning = true
@@ -116,6 +118,118 @@ function initZoomPan() {
 
   document.addEventListener('mousemove', _onMouseMove)
   document.addEventListener('mouseup', _onMouseUp)
+
+  // ── Touch: pan + pinch-to-zoom ────────────────────────────
+  let touchStartPos = null
+  let touchIsDragging = false
+  let lastPinchDist = null
+  let lastPinchCenter = null
+
+  function pinchDist(touches) {
+    const dx = touches[0].clientX - touches[1].clientX
+    const dy = touches[0].clientY - touches[1].clientY
+    return Math.sqrt(dx * dx + dy * dy)
+  }
+
+  function pinchCenter(touches) {
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2
+    }
+  }
+
+  svgElement.addEventListener('touchstart', (e) => {
+    e.preventDefault()
+    const touches = Array.from(e.touches)
+
+    if (touches.length === 1) {
+      touchStartPos = { x: touches[0].clientX, y: touches[0].clientY }
+      touchIsDragging = false
+      state.panStart = { x: touches[0].clientX, y: touches[0].clientY }
+      lastPinchDist = null
+      lastPinchCenter = null
+    } else if (touches.length === 2) {
+      touchIsDragging = true
+      lastPinchDist = pinchDist(touches)
+      lastPinchCenter = pinchCenter(touches)
+    }
+  }, { passive: false })
+
+  svgElement.addEventListener('touchmove', (e) => {
+    e.preventDefault()
+    const touches = Array.from(e.touches)
+
+    if (touches.length === 1) {
+      const dx = touches[0].clientX - state.panStart.x
+      const dy = touches[0].clientY - state.panStart.y
+
+      if (!touchIsDragging && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+        touchIsDragging = true
+      }
+
+      if (touchIsDragging) {
+        state.transform.tx += dx
+        state.transform.ty += dy
+        state.panStart = { x: touches[0].clientX, y: touches[0].clientY }
+        applyTransform()
+      }
+    } else if (touches.length === 2 && lastPinchDist !== null) {
+      const svgRect = svgElement.getBoundingClientRect()
+      const newDist = pinchDist(touches)
+      const newCenter = pinchCenter(touches)
+
+      const ratio = newDist / lastPinchDist
+      const oldScale = state.transform.scale
+      const newScale = Math.max(0.2, Math.min(3, oldScale * ratio))
+
+      // Map old pinch center in graph space to new pinch center in viewport space
+      const cxOld = lastPinchCenter.x - svgRect.left
+      const cyOld = lastPinchCenter.y - svgRect.top
+      const cxNew = newCenter.x - svgRect.left
+      const cyNew = newCenter.y - svgRect.top
+
+      state.transform.tx = cxNew - (cxOld - state.transform.tx) * (newScale / oldScale)
+      state.transform.ty = cyNew - (cyOld - state.transform.ty) * (newScale / oldScale)
+      state.transform.scale = newScale
+
+      lastPinchDist = newDist
+      lastPinchCenter = newCenter
+      applyTransform()
+    }
+  }, { passive: false })
+
+  svgElement.addEventListener('touchend', (e) => {
+    const remaining = e.touches.length
+    const changed = Array.from(e.changedTouches)
+
+    // Tap: single finger lifted without dragging → simulate click
+    if (remaining === 0 && !touchIsDragging && touchStartPos && changed.length === 1) {
+      const touch = changed[0]
+      const el = document.elementFromPoint(touch.clientX, touch.clientY)
+      if (el) {
+        el.dispatchEvent(new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          clientX: touch.clientX,
+          clientY: touch.clientY
+        }))
+      }
+    }
+
+    if (remaining < 2) {
+      lastPinchDist = null
+      lastPinchCenter = null
+    }
+
+    if (remaining === 0) {
+      touchStartPos = null
+      touchIsDragging = false
+    } else if (remaining === 1) {
+      // Transition from 2→1 finger: reset pan origin
+      state.panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      touchIsDragging = false
+    }
+  }, { passive: false })
 }
 
 /**
